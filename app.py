@@ -1,4 +1,5 @@
-from flask import Flask, request, render_template, redirect, url_for, session
+from flask import Flask, request, render_template, redirect, url_for, \
+    session, flash
 from flask_script import Manager
 from flask_bootstrap import Bootstrap
 from flask_moment import Moment
@@ -166,6 +167,10 @@ def index():
     # validate() Returns True is the data has been accepted
     # by all the field Validators
     if form.validate():
+        oldName = session['name']
+        if oldName is not None and oldName != form.name.data:
+            # adding a message is not enough now reder our messages
+            flash('Looks like you changed your name')
         # variable data is stored in the user session as session['name']
         session['name'] = form.name.data
         # POST/REDIRECT/GET Best Practice to prevent form re submission
