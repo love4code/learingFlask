@@ -1,0 +1,23 @@
+<!-- FORM FIELDS are callables that, when invoked from a template, render
+Themselves -->
+<form method="POST">
+    {{ form.hidden_tag() }}
+    {{ form.name.label }} {{ form.name(id='idName') }}
+    {{ form.submit() }}
+</form>
+<!--
+Note:
+That hidden_tag() method of the form class will define an extra form
+field that is hidden from view. Used by Flask to implement CSRF
+protection
+-->
+<!--
+To improve the look of the form, any agruments sent to the calls that
+render the fields are converted into HTML attributes for the field.
+So id='idname' class='classname'
+-->
+
+
+<!-- REGISTER a BOOTSTRAP FORM with way less code -->
+{% import "bootstrap/wtf.html" as wtf %}
+{{ wtf.quick_form(form) }}

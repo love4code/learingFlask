@@ -1,12 +1,15 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
 <!-- The extends directive declares that this template derives from base
 .html
  -->
-{% extends "base.html" %}
 
 {% block title %}Flasky{% endblock %}
 
 {% block page_content %}
 <div class="page-header">
-    <h1>Hello World!</h1>
+    <!-- Created a conditional to display name posted from form  -->
+    <h1>Hello,{% if name %}{{ name }}{% else %}Stranger{% endif %}!</h1>
 </div>
+{{ wtf.quick_form(form) }}
 {% endblock %}
