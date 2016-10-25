@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, redirect, url_for, session
 from flask_script import Manager
 from flask_bootstrap import Bootstrap
 from flask_moment import Moment
@@ -162,14 +162,21 @@ def internal_server_error(e):
 # get request only
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    name = None
     form = NameForm()
     # validate() Returns True is the data has been accepted
     # by all the field Validators
     if form.validate():
-        name = form.name.data
-        form.name.data = ''
-    return render_template('index.html', form=form,name=name)
+        # variable data is stored in the user session as session['name']
+        session['name'] = form.name.data
+        # POST/REDIRECT/GET Best Practice to prevent form re submission
+        # url_for() generates a route using the URL map, this ensures that
+        # any changes made in routes will automatically be available
+        return redirect(url_for('index'))
+    # name variable is now accessed though the user session session['name']
+    # using session.get() gettr
+    # using get to request distionary keys prevent exceptions for keys not
+    # found because get returns a default value of None for a missing key
+    return render_template('index.html', form=form,name=session.get('name'))
 
 # dynamic variables nthe url
 @app.route('/user/<name>')
