@@ -7,6 +7,9 @@ from flask_bootstrap import Bootstrap
 from flask_moment import Moment
 from flask_wtf import Form
 from flask_sqlalchemy import SQLAlchemy
+# When working in a virtual enviornment make sure to be in the activated
+# state when using pip install to install packages
+from flask_migrate import Migrate, MigrateCommand
 
 
 
@@ -61,6 +64,24 @@ db = SQLAlchemy(app)
 # The first argument to the field is the label that will be used when
 # rendering it.
 
+# To expose the database migrate commands, Flask Migrate exposes a
+# 'MigrateCommand' class that is attached to Flask_Script's manager object.
+
+# Before database migrations can be maintained, it is necessary to create
+# a migration repository with the 'init' command
+# [$]> python app.py db init
+# this command create a migrations folder, where all themigration scripts
+#  will be stored.
+migrate = Migrate(app, db)
+manager.add_command('db', MigrateCommand)
+# [$]> python app.py db migrate -m "Initial Migration"
+# creates an automatic migration script
+
+# [$]> python app.py db upgrade
+# For a first migration this is effectively equivalent to call
+# db.create_all()
+# however, in successive migrations the upgrade command applies updates
+# to the tables without effecting their contents
 
 
 class Role(db.Model):
