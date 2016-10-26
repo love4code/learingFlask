@@ -1,7 +1,8 @@
 from flask import Flask, request, render_template, redirect, \
                                         url_for, \
     session, flash
-from flask_script import Manager
+from flask_script import Manager, Shell
+
 from flask_bootstrap import Bootstrap
 from flask_moment import Moment
 from flask_wtf import Form
@@ -70,7 +71,8 @@ class Role(db.Model):
     # because the query is not automatically executed (lazy='dynamic')
     users = db.relationship('User', backref='role', lazy='dynamic')
     # >> > str(user_role.users)
-    # 'SELECT users.id AS users_id, users.username AS users_username, users.role_id AS users_role_id \nFROM users \nWHERE ? = users.role_id'
+    # 'SELECT users.id AS users_id, users.username AS users_username,
+    # users.role_id AS users_role_id \nFROM users \nWHERE ? = users.role_id'
 
     def __repr__(self):
         return '<Role %r>' % self.name
@@ -221,6 +223,19 @@ def index():
 def user(name):
     return render_template('user.html', name=name)
 
+
+
+# The Flask_Script Shell command can be comfigured to automatically
+# import certian objects
+
+# To add objects to the import list the shell command needs to b registered
+# with a make_context callback function
+
+def make_shell_context():
+    """Make a shell context"""
+
+    return dict(app=app, db=db, User=User, Role=Role)
+manager.add_command("shell", Shell(make_context=make_shell_context))
 
 if __name__ == '__main__':
     manager.run()
