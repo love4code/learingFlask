@@ -1,14 +1,20 @@
-from flask import Flask, request, render_template, redirect, url_for, \
+from flask import Flask, request, render_template, redirect, \
+                                        url_for, \
     session, flash
 from flask_script import Manager
 from flask_bootstrap import Bootstrap
 from flask_moment import Moment
 from flask_wtf import Form
+from flask_sqlalchemy import SQLAlchemy
+
+
+
 # Two Hours of hell thanks to wtf undocumented updates
 # Basically have to re learn the plugin From Scratch
 # Expect more frustration to come.
 from wtforms import StringField, SubmitField
 from wtforms import validators
+import os
 # The only requirement to the Flask class is constructor is the Pythons
 # name variable.
 #**********>>>
@@ -23,8 +29,13 @@ from wtforms import validators
 # 'TestApp.app'
 # >>> app_ctx.pop()
 # >>> current_app.name
-
+basedir = os.path.abspath(os.path.dirname(__file__))
 app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(
+    basedir, 'data.sqlite')
+# This setting enables automatic commits of databse changes at the end of
+#  every request
+app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 # The app.config dictionary is a general purpose place to store config vars
 # used by the framework
 # The configuration object also has methods to import values from files
@@ -41,13 +52,40 @@ bootstrap = Bootstrap(app)
 moment = Moment(app)
 # Error handlers return a response, like view functions.
 # They aslo return the numeric status code that corresponds to the error.
-
-# In Flask-WTF each form is respresented by a class that inherrits from
+db = SQLAlchemy(app)
+# In Flask-WTF each form is represented by a class that inherits from
 # the class Form
 # The fields in the form are defined as class variables and, each class
 # variable is assigned an object associated with the field type.
 # The first argument to the field is the label that will be used when
 # rendering it.
+
+
+
+class Role(db.Model):
+    __tablename__ = 'roles'
+    id = db.Column(db.Integer(), primary_key=True)
+    name = db.Column(db.String(64), unique=True)
+    # allows us to add filters
+    # because the query is not automatically executed (lazy='dynamic')
+    users = db.relationship('User', backref='role', lazy='dynamic')
+    # >> > str(user_role.users)
+    # 'SELECT users.id AS users_id, users.username AS users_username, users.role_id AS users_role_id \nFROM users \nWHERE ? = users.role_id'
+
+    def __repr__(self):
+        return '<Role %r>' % self.name
+
+
+class User(db.Model):
+    __tablename__ = 'users'
+    id = db.Column(db.Integer(), primary_key=True)
+    username = db.Column(db.String(64), unique=True, index=True)
+    role_id = db.Column(db.Integer(), db.ForeignKey('roles.id'))
+
+    def __repr__(self):
+        return '<User %r>' % self.username
+
+
 
 
 class NameForm(Form):
@@ -164,24 +202,19 @@ def internal_server_error(e):
 @app.route('/', methods=['GET', 'POST'])
 def index():
     form = NameForm()
-    # validate() Returns True is the data has been accepted
-    # by all the field Validators
     if form.validate():
-        oldName = session['name']
-        if oldName is not None and oldName != form.name.data:
-            # adding a message is not enough now reder our messages
-            flash('Looks like you changed your name')
-        # variable data is stored in the user session as session['name']
+        user = User.query.filter_by(username=form.name.data).first()
+        if user is None:
+            user = User(username=form.name.data)
+            db.session.add(user)
+            session['known'] = False
+        else:
+            session['known'] = True
         session['name'] = form.name.data
-        # POST/REDIRECT/GET Best Practice to prevent form re submission
-        # url_for() generates a route using the URL map, this ensures that
-        # any changes made in routes will automatically be available
+        form.name.data = ''
         return redirect(url_for('index'))
-    # name variable is now accessed though the user session session['name']
-    # using session.get() gettr
-    # using get to request distionary keys prevent exceptions for keys not
-    # found because get returns a default value of None for a missing key
-    return render_template('index.html', form=form,name=session.get('name'))
+    return render_template('index.html', form=form, name=session.get(
+        'name'),known=session.get('known',False))
 
 # dynamic variables nthe url
 @app.route('/user/<name>')

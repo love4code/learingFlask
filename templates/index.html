@@ -10,6 +10,11 @@
 <div class="page-header">
     <!-- Created a conditional to display name posted from form  -->
     <h1>Hello,{% if name %}{{ name }}{% else %}Stranger{% endif %}!</h1>
+    {% if not known %}
+    <p>Pleased To Meet You!</p>
+    {% else %}
+    <p>Happy To See You Again!</p>
+    {% endif %}
 </div>
 {{ wtf.quick_form(form) }}
 {% endblock %}
