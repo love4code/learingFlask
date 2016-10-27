@@ -5,13 +5,13 @@ from flask_script import Manager, Shell
 
 from flask_bootstrap import Bootstrap
 from flask_moment import Moment
-from flask_wtf import Form
+from flask_wtf import FlaskForm
 from flask_sqlalchemy import SQLAlchemy
 # When working in a virtual enviornment make sure to be in the activated
 # state when using pip install to install packages
 from flask_migrate import Migrate, MigrateCommand
 from flask_mail import Mail, Message
-
+from threading import Thread
 
 
 # Two Hours of hell thanks to wtf undocumented updates
@@ -134,7 +134,7 @@ class User(db.Model):
 
 
 
-class NameForm(Form):
+class NameForm(FlaskForm):
     name = StringField('What is your name?',[validators.DataRequired()])
     submit = SubmitField('Submit')
 
@@ -273,7 +273,12 @@ def index():
 @app.route('/user/<name>')
 def user(name):
     return render_template('user.html', name=name)
-
+# Create a function to send Async emails
+def send_async_email(app, msg):
+    """Send email using a background thread"""
+    print("sending...")
+    with app.app_context():
+        mail.send(msg)
 # Create a function to send emails
 
 def send_email(to, subject, template, **kwargs):
@@ -288,7 +293,10 @@ def send_email(to, subject, template, **kwargs):
     # Rich text Body
     msg.html = render_template(template + '.html', **kwargs)
     # Needs to be executed with an activated application context
-    mail.send(msg)
+    # start thread
+    thr = Thread(target=send_async_email(app, msg))
+    thr.start()
+    return thr
 
 # The Flask_Script Shell command can be comfigured to automatically
 # import certian objects
